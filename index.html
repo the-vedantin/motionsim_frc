@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kraken Mechanism Solver</title>
+    <link rel="stylesheet" href="./styles.css?v=20260601-time-axis">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="control-rail" aria-label="Mechanism inputs">
+        <div class="panel">
+          <div class="section-head">
+            <h2>Motor</h2>
+            <button class="info-button" data-info="motor" type="button" aria-label="Motor section info">i</button>
+          </div>
+          <label>
+            Motor
+            <select id="motor"></select>
+          </label>
+          <div class="inline-grid">
+            <label>
+              Motors
+              <span class="input-unit">
+                <input id="motorCount" type="number" min="1" step="1" value="1">
+                <span class="unit-tag">count</span>
+              </span>
+            </label>
+            <label>
+              Current limit
+              <span class="input-unit">
+                <input id="currentLimit" type="number" min="1" step="1" value="80">
+                <span class="unit-tag">A/motor</span>
+              </span>
+            </label>
+          </div>
+          <div class="specs" id="motorSpecs"></div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <h2>Mechanism</h2>
+            <button class="info-button" data-info="mechanism" type="button" aria-label="Mechanism section info">i</button>
+          </div>
+          <div class="segmented" role="group" aria-label="Mechanism type">
+            <button class="active" id="pivotMode" type="button">Pivot</button>
+            <button id="linearMode" type="button">Linear</button>
+          </div>
+          <div class="segmented" role="group" aria-label="Motion type">
+            <button class="active" id="moveMotion" type="button">Move</button>
+            <button id="continuousMotion" type="button">Continuous</button>
+          </div>
+          <div class="inline-grid">
+            <label>
+              Gear reduction
+              <span class="input-unit">
+                <input id="ratio" type="number" min="0.1" step="0.1" value="25">
+                <span class="unit-tag">:1</span>
+              </span>
+            </label>
+            <label>
+              Efficiency
+              <span class="input-unit">
+                <input id="efficiency" type="number" min="1" max="100" step="1" value="85">
+                <span class="unit-tag">%</span>
+              </span>
+            </label>
+          </div>
+          <div class="inline-grid">
+            <label>
+              Mass
+              <span class="input-unit">
+                <input id="mass" type="number" min="0" step="0.1" value="10">
+                <span class="unit-tag">lb</span>
+              </span>
+            </label>
+            <label id="radiusLabel">
+              Distance from axis
+              <span class="input-unit">
+                <input id="radius" type="number" min="0.01" step="0.1" value="14">
+                <span class="unit-tag">in</span>
+              </span>
+            </label>
+          </div>
+          <div id="linearOnly" class="hidden">
+            <label>
+              Linear transmission
+              <select id="linearTransmission">
+                <option value="spool">Spool / string</option>
+                <option value="rack-pinion">Rack &amp; pinion</option>
+              </select>
+            </label>
+            <label id="drumRadiusLabel">
+              Drum / pulley radius
+              <span class="input-unit">
+                <input id="drumRadius" type="number" min="0.01" step="0.01" value="0.75">
+                <span class="unit-tag">in</span>
+              </span>
+            </label>
+          </div>
+          <div id="continuousOnly" class="hidden">
+            <div class="inline-grid">
+              <label id="targetSpeedLabel">
+                Target RPM
+                <span class="input-unit">
+                  <input id="targetSpeed" type="number" min="0" step="10" value="300">
+                  <span class="unit-tag" id="targetSpeedUnit">rpm</span>
+                </span>
+              </label>
+              <label>
+                Sim duration
+                <span class="input-unit">
+                  <input id="simDuration" type="number" min="0.1" step="0.1" value="3">
+                  <span class="unit-tag">s</span>
+                </span>
+              </label>
+            </div>
+            <label id="externalLoadLabel">
+              External load
+              <span class="input-unit">
+                <input id="externalLoad" type="number" min="0" step="0.1" value="2">
+                <span class="unit-tag" id="externalLoadUnit">lb in</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <h2>Gravity</h2>
+            <button class="info-button" data-info="gravity" type="button" aria-label="Gravity section info">i</button>
+          </div>
+          <label class="check-row">
+            <input id="gravityEnabled" type="checkbox" checked>
+            Enabled
+          </label>
+          <label>
+            Acceleration
+            <span class="input-unit">
+              <input id="gravityAccel" type="number" min="0" step="0.00001" value="9.80665">
+              <span class="unit-tag">m/s^2</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <h2>Axis</h2>
+            <button class="info-button" data-info="axis" type="button" aria-label="Axis section info">i</button>
+          </div>
+          <div class="inline-grid">
+            <label>
+              Tilt from vertical
+              <span class="input-unit">
+                <input id="axisTilt" type="number" min="0" max="180" step="1" value="0">
+                <span class="unit-tag">deg</span>
+              </span>
+            </label>
+            <label>
+              XY plane heading
+              <span class="input-unit">
+                <input id="axisHeading" type="number" step="1" value="0">
+                <span class="unit-tag">deg</span>
+              </span>
+            </label>
+          </div>
+          <div class="axis-row">
+            <button class="axis-preset" data-axis="x" type="button">X axis</button>
+            <button class="axis-preset" data-axis="y" type="button">Y axis</button>
+            <button class="axis-preset" data-axis="z" type="button">Z axis</button>
+          </div>
+          <p class="helper-copy">Axis is constrained only by the two angle inputs above. Presets write those angles directly.</p>
+          <div id="pivotOnly">
+            <div class="inline-grid">
+              <label>
+                Start angle
+                <span class="input-unit">
+                  <input id="startAngle" type="number" step="1" value="-70">
+                  <span class="unit-tag">deg</span>
+                </span>
+              </label>
+              <label>
+                End angle
+                <span class="input-unit">
+                  <input id="endAngle" type="number" step="1" value="70">
+                  <span class="unit-tag">deg</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <label id="moveIterationLimit">
+            Iteration limit
+            <span class="input-unit">
+              <input id="iterationLimit" type="number" min="1" step="1" value="10000">
+              <span class="unit-tag">steps</span>
+            </span>
+          </label>
+          <div id="linearAxisOnly" class="hidden">
+            <label>
+              Travel
+              <span class="input-unit">
+                <input id="travel" type="number" min="0.01" step="0.1" value="20">
+                <span class="unit-tag">in</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-head">
+            <h2>Inverse solver</h2>
+            <button class="info-button" data-info="solver" type="button" aria-label="Inverse solver section info">i</button>
+          </div>
+          <label>
+            Optimizer goal
+            <select id="solveGoal">
+              <option value="target-time">Meet target time</option>
+              <option value="fastest">Fastest time to target</option>
+              <option value="min-current">Minimum max current</option>
+              <option value="target-rpm">Meet target RPM</option>
+            </select>
+          </label>
+          <div class="inline-grid">
+            <label id="solveCurrentLabel">
+              Max current
+              <span class="input-unit">
+                <input id="solveCurrent" type="number" min="1" step="1" value="80">
+                <span class="unit-tag">A/motor</span>
+              </span>
+            </label>
+            <label id="solveTimeLabel">
+              Max time
+              <span class="input-unit">
+                <input id="solveTime" type="number" min="0.05" step="0.05" value="1.2">
+                <span class="unit-tag">s</span>
+              </span>
+            </label>
+          </div>
+          <div class="inline-grid">
+            <label>
+              Min reduction
+              <span class="input-unit">
+                <input id="solveMinRatio" type="number" min="0.1" step="0.1" value="1">
+                <span class="unit-tag">:1</span>
+              </span>
+            </label>
+            <label>
+              Max reduction
+              <span class="input-unit">
+                <input id="solveMaxRatio" type="number" min="0.1" step="0.1" value="150">
+                <span class="unit-tag">:1</span>
+              </span>
+            </label>
+          </div>
+          <button class="primary-action" id="solveButton" type="button">Solve reduction</button>
+          <div class="solution" id="solution"></div>
+        </div>
+      </section>
+
+      <section class="visual-workbench" aria-label="Mechanism visualizer and curves">
+        <div class="viewer-wrap">
+          <button class="info-button viewer-info" data-info="visualizer" type="button" aria-label="Visualizer info">i</button>
+          <canvas id="scene"></canvas>
+          <div class="navcube" aria-label="Navigation cube">
+            <div class="cube">
+              <button class="face front" data-view="front" type="button">Z+</button>
+              <button class="face back" data-view="back" type="button">Z-</button>
+              <button class="face right" data-view="right" type="button">X+</button>
+              <button class="face left" data-view="left" type="button">X-</button>
+              <button class="face top" data-view="top" type="button">Y+</button>
+              <button class="face bottom" data-view="bottom" type="button">Y-</button>
+            </div>
+          </div>
+          <div class="readout" id="readout"></div>
+        </div>
+        <div class="plot-grid">
+          <div class="plot-card">
+            <div class="plot-title">
+              <span>Motor curves</span>
+              <button class="info-button" data-info="motor-curves" type="button" aria-label="Motor curves info">i</button>
+            </div>
+            <canvas id="motorPlot"></canvas>
+            <div class="plot-tooltip hidden" id="motorTip"></div>
+          </div>
+          <div class="plot-card">
+            <div class="plot-title">
+              <span>Mechanism simulation</span>
+              <button class="info-button" data-info="simulation-curves" type="button" aria-label="Mechanism simulation graph info">i</button>
+            </div>
+            <canvas id="simPlot"></canvas>
+            <div class="plot-tooltip hidden" id="simTip"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+      <div class="info-modal">
+        <div class="modal-head">
+          <h2 id="infoModalTitle">Info</h2>
+          <button class="info-close" id="infoClose" type="button" aria-label="Close info">x</button>
+        </div>
+        <div class="modal-body" id="infoModalBody"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="./app.js?v=20260601-time-axis"></script>
+  </body>
+</html>
