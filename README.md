@@ -5,11 +5,8 @@ A simple browser-based mechanism simulator inspired by ReCalc.
 ## Features
 
 * Pivot and linear mechanism simulation
-* Move and continuous motion modes
-* Kraken motor modeling
-* Gear reduction solving
-* Current, torque, speed, power, and motion plots
-* Gravity-aware loading
+* Simulate them at any angle/plane
+* Angled elevators, linear intakes, dye rotors, slap down intakes, arms
 
 ## Files
 
@@ -19,7 +16,7 @@ A simple browser-based mechanism simulator inspired by ReCalc.
 
 ## Usage
 
-Open `index.html` in a browser, enter mechanism inputs, and use the inverse solver to size the reduction.
+Open https://the-vedantin.github.io/motionsim_frc/
 
 ## Limits
 
