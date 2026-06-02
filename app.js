@@ -619,11 +619,14 @@
     }
 
     if (best) {
+      const solvedState = { ...state, ratio: best.ratio, currentLimitA: state.solveCurrentA };
+      const targetTime = continuousTimeToTarget(solvedState, simulateContinuous(solvedState));
       els.ratio.value = best.ratio.toFixed(2);
       els.currentLimit.value = state.solveCurrentA.toFixed(0);
       els.solution.innerHTML = [
         `<span><strong>Applied reduction</strong><strong>${best.ratio.toFixed(2)}:1</strong></span>`,
         `<span><span>Target output</span><span>${state.mode === "pivot" ? fmt(state.targetOutputRpm, 1, "rpm") : fmt(state.targetLinearIps, 1, "in/s")}</span></span>`,
+        `<span><span>${state.mode === "pivot" ? "Time to target RPM" : "Time to target speed"}</span><span>${Number.isFinite(targetTime) ? fmt(targetTime, 2, "s") : "not reached"}</span></span>`,
         `<span><span>Motor speed</span><span>${fmt(best.motorRpm, 0, "rpm")}</span></span>`,
         `<span><span>Required current</span><span>${fmt(best.currentA, 1, "A/motor")}</span></span>`,
       ].join("");
@@ -769,6 +772,8 @@
 
   function updateContinuousReadout(state) {
     const status = continuousStatus(state);
+    const points = simulateContinuous(state);
+    const targetTime = continuousTimeToTarget(state, points);
     const targetLine =
       state.mode === "pivot"
         ? `<span><span>Target RPM</span><span>${fmt(state.targetOutputRpm, 1, "rpm")}</span></span>`
@@ -786,6 +791,7 @@
       targetLine,
       actualLine,
       `<span><span>Motor speed</span><span>${fmt(status.actualMotorRpm, 0, "rpm")}</span></span>`,
+      `<span><span>${state.mode === "pivot" ? "Time to target RPM" : "Time to target speed"}</span><span>${Number.isFinite(targetTime) ? fmt(targetTime, 2, "s") : "not reached"}</span></span>`,
       loadLine,
       `<span><span>Actual current</span><span>${fmt(status.actualCurrent, 1, "A/motor")}</span></span>`,
       `<span><span>Status</span><span>${status.valid ? "valid at target" : "target exceeds model"}</span></span>`,
@@ -1235,6 +1241,16 @@
 
   function positiveModulo(value, divisor) {
     return ((value % divisor) + divisor) % divisor;
+  }
+
+  function continuousTimeToTarget(state, points) {
+    const target = state.mode === "pivot" ? state.targetOutputRpm : state.targetLinearIps;
+    if (!Number.isFinite(target) || target <= 0) return 0;
+    for (const point of points) {
+      const value = state.mode === "pivot" ? point.outputRpm : point.linearIps;
+      if (value >= target * 0.995) return point.t;
+    }
+    return NaN;
   }
 
   function drawPlot(key, canvas, series, bounds) {
