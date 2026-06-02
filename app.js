@@ -608,14 +608,43 @@
     const minRatio = Math.min(state.solveMinRatio, state.solveMaxRatio);
     const maxRatio = Math.max(state.solveMinRatio, state.solveMaxRatio);
     let best = null;
+    let fastest = null;
     let fastestMotor = null;
 
     for (let i = 0; i <= 2400; i += 1) {
       const ratio = minRatio + ((maxRatio - minRatio) * i) / 2400;
       const candidate = continuousCandidateAtRatio(state, ratio);
       if (!candidate.valid) continue;
+      const candidateState = { ...state, ratio, currentLimitA: state.solveCurrentA };
+      const targetTime = continuousTimeToTarget(candidateState, simulateContinuous(candidateState));
+      const timedCandidate = { ...candidate, targetTime };
       if (!best || candidate.currentA < best.currentA) best = candidate;
+      if (Number.isFinite(targetTime) && (!fastest || targetTime < fastest.targetTime)) {
+        fastest = timedCandidate;
+      }
       if (!fastestMotor || candidate.motorRpm > fastestMotor.motorRpm) fastestMotor = candidate;
+    }
+
+    if (state.solveGoal === "fastest") {
+      if (fastest) {
+        els.ratio.value = fastest.ratio.toFixed(2);
+        els.currentLimit.value = state.solveCurrentA.toFixed(0);
+        els.solution.innerHTML = [
+          `<span><strong>Fastest reduction</strong><strong>${fastest.ratio.toFixed(2)}:1</strong></span>`,
+          `<span><span>Target output</span><span>${state.mode === "pivot" ? fmt(state.targetOutputRpm, 1, "rpm") : fmt(state.targetLinearIps, 1, "in/s")}</span></span>`,
+          `<span><span>${state.mode === "pivot" ? "Time to target RPM" : "Time to target speed"}</span><span>${fmt(fastest.targetTime, 2, "s")}</span></span>`,
+          `<span><span>Motor speed</span><span>${fmt(fastest.motorRpm, 0, "rpm")}</span></span>`,
+          `<span><span>Required current</span><span>${fmt(fastest.currentA, 1, "A/motor")}</span></span>`,
+        ].join("");
+        updateAll(true);
+        return;
+      }
+
+      els.solution.innerHTML = [
+        `<span><span class="bad">No ratio reaches target speed.</span><span>${fmt(state.simDurationS, 2, "s")} sim</span></span>`,
+        `<span><span>Raise max current, sim duration, or ratio range.</span><span></span></span>`,
+      ].join("");
+      return;
     }
 
     if (best) {
